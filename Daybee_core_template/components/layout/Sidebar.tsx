@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { LayoutDashboard, Settings, LogOut, X } from 'lucide-react'
+import { LayoutDashboard, Settings, LogOut, X, Building2, Users, Home, FileText, Receipt } from 'lucide-react'
 import { APP_NAME } from '@/lib/config'
 
 type NavItem = {
@@ -14,14 +14,14 @@ type NavItem = {
 }
 
 // ─── Navigation items ──────────────────────────────────────────────────────────
-// Add your domain-specific routes here.
-// Import additional icons from lucide-react as needed.
 const navItems: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', Icon: LayoutDashboard, exact: true },
-  { label: 'Settings',  href: '/settings',  Icon: Settings },
-  // Examples (uncomment and customise):
-  // { label: 'Entities',  href: '/entities',  Icon: Users },
-  // { label: 'Records',   href: '/records',   Icon: FileText },
+  { label: 'Dashboard',    href: '/dashboard',   Icon: LayoutDashboard, exact: true },
+  { label: 'Identiteiten', href: '/identities',  Icon: Building2 },
+  { label: 'Huurders',     href: '/tenants',     Icon: Users },
+  { label: 'Panden',       href: '/properties',  Icon: Home },
+  { label: 'Contracten',   href: '/contracts',   Icon: FileText },
+  { label: 'Facturen',     href: '/invoices',    Icon: Receipt },
+  { label: 'Instellingen', href: '/settings',    Icon: Settings },
 ]
 
 type SidebarProps = {
@@ -51,7 +51,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             className="sidebar-close-btn"
             onClick={onClose}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)', padding: '4px', display: 'flex', alignItems: 'center' }}
-            aria-label="Close menu"
+            aria-label="Menu sluiten"
           >
             <X size={18} />
           </button>
@@ -98,7 +98,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
           >
             <LogOut size={16} strokeWidth={1.75} />
-            <span>Sign out</span>
+            <span>Uitloggen</span>
           </button>
         </div>
       </aside>

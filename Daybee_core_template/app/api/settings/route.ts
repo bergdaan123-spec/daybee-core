@@ -18,19 +18,19 @@ const settingsFields = {
 
 export async function GET() {
   const userId = await getAuthUserId()
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!userId) return NextResponse.json({ error: 'Niet geautoriseerd' }, { status: 401 })
   try {
     const user = await prisma.user.findUnique({ where: { id: userId }, select: settingsFields })
     return NextResponse.json(user ?? {})
   } catch (error) {
     console.error('[GET /api/settings]', error)
-    return NextResponse.json({ error: 'Failed to load settings' }, { status: 500 })
+    return NextResponse.json({ error: 'Instellingen laden mislukt' }, { status: 500 })
   }
 }
 
 export async function PUT(req: NextRequest) {
   const userId = await getAuthUserId()
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!userId) return NextResponse.json({ error: 'Niet geautoriseerd' }, { status: 401 })
   try {
     const body = await req.json()
     const { companyName, email, phone, address, postalCode, city, logoUrl } = body
@@ -50,6 +50,6 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json(user)
   } catch (error) {
     console.error('[PUT /api/settings]', error)
-    return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 })
+    return NextResponse.json({ error: 'Instellingen opslaan mislukt' }, { status: 500 })
   }
 }

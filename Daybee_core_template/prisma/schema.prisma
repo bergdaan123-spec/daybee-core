@@ -10,6 +10,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum IdentityType {
+  PRIVATE
+  BV
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+}
+
 // ─── User ─────────────────────────────────────────────────────────────────────
 // Core authentication + profile model.
 // Extend with domain-specific relations as needed.
@@ -31,23 +45,176 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // ── Add domain relations here ──────────────────────────────────────────────
-  // Example:
-  // entities Entity[]
+  // ── Domain relations ───────────────────────────────────────────────────────
+  identities      Identity[]
+  tenants         Tenant[]
+  properties      Property[]
+  rentalContracts RentalContract[]
+  invoices        Invoice[]
 }
 
 // ─── Domain models ────────────────────────────────────────────────────────────
-// Add your application-specific models below.
-// Each model should include a `userId String` field and a relation to User.
-//
-// Example:
-// model Entity {
-//   id          String   @id @default(cuid())
-//   userId      String
-//   name        String
-//   description String?
-//   createdAt   DateTime @default(now())
-//   updatedAt   DateTime @updatedAt
-//
-//   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-// }
+
+// Identity
+// Represents the sender of an invoice — either a private person or a BV entity.
+
+model Identity {
+  id         String       @id @default(cuid())
+  userId     String
+  name       String
+  type       IdentityType
+  address    String
+  postalCode String
+  city       String
+  country    String
+  email      String
+  phone      String?
+  kvkNumber  String?
+  btwNumber  String?
+  iban       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rentalContracts RentalContract[]
+  invoices        Invoice[]
+
+  @@index([userId])
+}
+
+// Tenant
+// Represents a renter / customer who receives invoices.
+
+model Tenant {
+  id            String  @id @default(cuid())
+  userId        String
+  name          String
+  email         String
+  phone         String?
+  address       String
+  postalCode    String
+  city          String
+  country       String
+
+  // Business fields — relevant when the tenant is a company rather than a private person
+  companyName   String?
+  contactPerson String?
+  kvkNumber     String?
+  btwNumber     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rentalContracts RentalContract[]
+  invoices        Invoice[]
+
+  @@index([userId])
+}
+
+// Property
+// Represents a rental unit or property.
+
+model Property {
+  id         String  @id @default(cuid())
+  userId     String
+  name       String
+  address    String
+  postalCode String
+  city       String
+  country    String
+  notes      String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rentalContracts RentalContract[]
+
+  @@index([userId])
+}
+
+// RentalContract
+// Represents the rental agreement between a tenant and a property,
+// sent from a specific identity.
+
+model RentalContract {
+  id                String    @id @default(cuid())
+  userId            String
+  tenantId          String
+  propertyId        String
+  identityId        String
+  monthlyRent       Decimal   @db.Decimal(10, 2)
+  paymentDayOfMonth Int
+  startDate         DateTime
+  endDate           DateTime?
+  active            Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id])
+  identity Identity @relation(fields: [identityId], references: [id])
+  invoices Invoice[]
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([propertyId])
+  @@index([identityId])
+}
+
+// Invoice
+// Represents a generated rent invoice.
+
+model Invoice {
+  id               String        @id @default(cuid())
+  userId           String
+  invoiceNumber    String        @unique
+  tenantId         String
+  identityId       String
+  rentalContractId String
+  issueDate        DateTime
+  dueDate          DateTime
+  amount           Decimal       @db.Decimal(10, 2)
+  vatRate          Decimal?      @db.Decimal(5, 2)   // null = no VAT; e.g. 21.00 for 21%
+  status           InvoiceStatus @default(DRAFT)
+  description      String?       @db.Text
+  pdfUrl           String?       @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  identity       Identity        @relation(fields: [identityId], references: [id])
+  rentalContract RentalContract  @relation(fields: [rentalContractId], references: [id])
+  charges        InvoiceCharge[]
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([identityId])
+  @@index([rentalContractId])
+  @@index([status])
+}
+
+// InvoiceCharge
+// One row per extra cost line on an invoice (e.g. OZBG, RIOG, service costs).
+
+model InvoiceCharge {
+  id        String   @id @default(cuid())
+  invoiceId String
+  label     String
+  reference String?
+  amount    Decimal  @db.Decimal(10, 2)
+  sortOrder Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}

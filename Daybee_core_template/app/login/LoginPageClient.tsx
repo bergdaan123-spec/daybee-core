@@ -2,14 +2,16 @@
 
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { APP_NAME } from '@/lib/config'
 import { inputStyle, errorBoxStyle, primaryButtonStyle, disabledButtonStyle, onFocusBorder, onBlurBorder } from '@/styles/shared'
 
-export default function RegisterPage() {
-  const router = useRouter()
-  const [name, setName]         = useState('')
+export default function LoginPageClient() {
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const justRegistered = searchParams.get('registered') === '1'
+
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading]   = useState(false)
@@ -19,26 +21,12 @@ export default function RegisterPage() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    try {
-      const res = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
-      })
-      const data = await res.json()
-      if (!res.ok) { setError(data.error ?? 'Registratie mislukt'); setLoading(false); return }
-
-      // Auto sign-in after successful registration
-      const result = await signIn('credentials', { email, password, redirect: false })
-      if (result?.error) {
-        // Account was created but auto sign-in failed — send to login with a hint
-        router.push('/login?registered=1')
-      } else {
-        router.push('/dashboard')
-      }
-    } catch {
-      setError('Er is iets misgegaan. Probeer het opnieuw.')
+    const result = await signIn('credentials', { email, password, redirect: false })
+    if (result?.error) {
+      setError('Ongeldig e-mailadres of wachtwoord')
       setLoading(false)
+    } else {
+      router.push('/dashboard')
     }
   }
 
@@ -50,30 +38,25 @@ export default function RegisterPage() {
             {APP_NAME}
           </h1>
           <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginTop: '6px' }}>
-            Account aanmaken
+            Inloggen op uw account
           </p>
         </div>
 
+        {justRegistered && !error && (
+          <div style={{ padding: '12px 14px', backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: '8px', fontSize: '13px', color: '#065F46', marginBottom: '4px' }}>
+            Account aangemaakt — log in om verder te gaan.
+          </div>
+        )}
         {error && <div style={errorBoxStyle}>{error}</div>}
 
         <form onSubmit={handleSubmit} className="form-stack">
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>
-              Naam
-            </label>
-            <input
-              type="text" value={name} onChange={(e) => setName(e.target.value)}
-              required autoFocus placeholder="Jan de Vries"
-              style={inputStyle} onFocus={onFocusBorder} onBlur={onBlurBorder}
-            />
-          </div>
           <div>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>
               E-mailadres
             </label>
             <input
               type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-              required placeholder="u@voorbeeld.nl"
+              required autoFocus placeholder="u@voorbeeld.nl"
               style={inputStyle} onFocus={onFocusBorder} onBlur={onBlurBorder}
             />
           </div>
@@ -83,7 +66,7 @@ export default function RegisterPage() {
             </label>
             <input
               type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-              required placeholder="Minimaal 8 tekens"
+              required placeholder="••••••••"
               style={inputStyle} onFocus={onFocusBorder} onBlur={onBlurBorder}
             />
           </div>
@@ -93,14 +76,14 @@ export default function RegisterPage() {
             disabled={loading}
             style={{ ...(loading ? disabledButtonStyle : primaryButtonStyle), marginTop: '8px', width: '100%', padding: '12px' }}
           >
-            {loading ? 'Account aanmaken…' : 'Account aanmaken'}
+            {loading ? 'Bezig met inloggen…' : 'Inloggen'}
           </button>
         </form>
 
         <p className="auth-footer">
-          Al een account?{' '}
-          <Link href="/login" style={{ color: 'var(--color-text-primary)', fontWeight: 500, textDecoration: 'underline' }}>
-            Inloggen
+          Nog geen account?{' '}
+          <Link href="/register" style={{ color: 'var(--color-text-primary)', fontWeight: 500, textDecoration: 'underline' }}>
+            Registreren
           </Link>
         </p>
       </div>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 20" width="96" height="20" role="img" aria-label="Daybee">
+  <!-- Amber hexagon badge -->
+  <polygon points="8,1 15,5 15,15 8,19 1,15 1,5" fill="#F59E0B"/>
+  <!-- White "d" inside badge -->
+  <text x="8" y="14.5" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="10" font-weight="bold" fill="#ffffff">d</text>
+  <!-- Daybee wordmark in navy -->
+  <text x="21" y="15" font-family="Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#1F3A5F">Daybee</text>
+</svg>
